@@ -2,6 +2,11 @@
 
 A simple, free tool for making long Excel formulas easier to read. Format, highlight, and minify formulas directly in your browser.
 
+## Pages
+
+The site is available at:  
+    https://papi721-main.github.io/Excel-Formula-Formatter/
+
 ## Features
 
 - Format formulas with readable indentation and line breaks.
