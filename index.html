@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Excel Formula Formatter</title>
+  <meta name="description" content="Format and minify Excel formulas, with syntax highlighting, modern function support, and safe handling of quoted strings and references. Private and free, works offline.">
+  <meta name="theme-color" content="#315e9b">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJFeGNlbCBGb3JtdWxhIEZvcm1hdHRlciBsb2dvIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0ibG9nby1ibHVlIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzMxNWU5YiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxZDQxNmQiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDxyZWN0IHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgcng9IjE1IiBmaWxsPSJ1cmwoI2xvZ28tYmx1ZSkiLz4KICA8cmVjdCB4PSI5IiB5PSIxMiIgd2lkdGg9IjYiIGhlaWdodD0iNDAiIHJ4PSIzIiBmaWxsPSIjNzhjZmI2Ii8+CiAgPHRleHQgeD0iMjEiIHk9IjQzIiBmb250LWZhbWlseT0iQXJpYWwsIEhlbHZldGljYSwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIzMCIgZm9udC13ZWlnaHQ9IjcwMCIgbGV0dGVyLXNwYWNpbmc9Ii0yIiBmaWxsPSIjZmZmZmZmIj5meDwvdGV4dD4KICA8Y2lyY2xlIGN4PSI1MSIgY3k9IjE2IiByPSI0IiBmaWxsPSIjODhkZmM1Ii8+Cjwvc3ZnPg==">
+  <style>
+    :root {
+      --bg: #f4f7fb; --surface: #ffffff; --surface-soft: #f8fafd;
+      --ink: #1d2c3d; --muted: #607186; --line: #dce4ee;
+      --accent: #315e9b; --accent-hover: #244d85; --accent-soft: #eaf1fa;
+      --success: #287354; --danger: #ad483f; --focus: #7ca9e9;
+      --formula-fn: #255da5; --formula-string: #a04e39; --formula-num: #7354a3;
+      --formula-ref: #15746a; --formula-op: #526071; --formula-bracket: #69789e;
+      --shadow: 0 15px 45px rgba(34, 57, 84, 0.055);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 15px; }
+    .wrap { max-width: 1150px; padding: 47px 25px 35px; margin: 0 auto; }
+    .title-line { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
+    .title-line h1 { margin-bottom: 0; }
+    .logo-icon { flex: none; width: 45px; height: 45px; filter: drop-shadow(0 4px 8px rgba(30, 64, 104, .12)); }
+    .logo-icon svg { display: block; width: 100%; height: 100%; }
+    .heading { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 25px; }
+    .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; margin-bottom: 9px; }
+    h1 { font-size: clamp(25px, 3vw, 33px); font-weight: 740; letter-spacing: -0.038em; line-height: 1.12; margin: 0 0 10px; }
+    .intro { color: var(--muted); margin: 0; line-height: 1.6; }
+    .offline { font-size: 12px; color: var(--muted); background: #e9eff6; border: 1px solid #dbe4f0; border-radius: 100px; white-space: nowrap; padding: 7px 12px; }
+    .offline::before { content: "●"; color: var(--success); margin-right: 8px; font-size: 9px; }
+    .workbench { display: grid; grid-template-columns: 1fr 1fr; gap: 19px; align-items: stretch; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; box-shadow: var(--shadow); min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+    .panel-head { padding: 19px 21px 15px; display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+    .panel-title { font-size: 14px; font-weight: 740; margin: 0; }
+    .panel-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .subtle-action { border: 0; background: transparent; color: var(--accent); font-weight: 650; font-size: 12px; cursor: pointer; padding: 2px 0; white-space: nowrap; }
+    .subtle-action:hover { text-decoration: underline; }
+    .editor-wrap { margin: 0 18px; border: 1px solid var(--line); border-radius: 9px; min-height: 360px; background: #fcfdff; overflow: hidden; display: flex; }
+    textarea#input { width: 100%; min-height: 360px; height: 100%; resize: vertical; padding: 18px; border: 0; outline: 0; background: transparent; font: 13px/1.8 ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace; color: #23334c; tab-size: 4; overflow: auto; }
+    textarea::placeholder { color: #8d9bac; }
+    .editor-wrap:focus-within { border-color: var(--focus); box-shadow: 0 0 0 3px rgba(78, 127, 191, 0.13); }
+    .code-wrap { margin: 0 18px; border: 1px solid var(--line); border-radius: 9px; min-height: 360px; max-height: 600px; background: var(--surface-soft); overflow: auto; position: relative; }
+    .code { padding: 18px; margin: 0; min-height: 358px; color: #24344b; font: 13px/1.8 ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace; white-space: pre; tab-size: 4; user-select: text; }
+    .placeholder { color: #93a0b0; white-space: pre-wrap; }
+    .token-function { color: var(--formula-fn); font-weight: 650; }
+    .token-string, .token-sheet { color: var(--formula-string); }
+    .token-number { color: var(--formula-num); }
+    .token-reference { color: var(--formula-ref); }
+    .token-operator { color: var(--formula-op); }
+    .token-bracket, .token-separator { color: var(--formula-bracket); }
+    .panel-foot { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 19px 18px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+    button { font: inherit; cursor: pointer; }
+    .btn { border-radius: 8px; border: 1px solid var(--line); padding: 10px 16px; font-size: 13px; font-weight: 690; background: #fff; color: #314760; transition: background-color .15s, border-color .15s; }
+    .btn:hover:not(:disabled) { background: #f3f7fc; border-color: #b7c8dd; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+    .btn:disabled { opacity: .48; cursor: not-allowed; }
+    button:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .settings { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+    .settings label { display: flex; align-items: center; gap: 9px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+    select { background: white; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; padding: 7px 26px 7px 9px; font: inherit; font-size: 12px; cursor: pointer; }
+    .status { min-height: 18px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .status.ok { color: var(--success); }
+    .status.error { color: var(--danger); }
+    .help { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-top: 19px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .help a { color: var(--accent); text-underline-offset: 3px; }
+    .shortcut { font-family: ui-monospace, Consolas, monospace; border: 1px solid var(--line); background: #fff; border-radius: 4px; padding: 2px 5px; }
+    @media (max-width: 825px) { .wrap { padding: 30px 15px; } .workbench { grid-template-columns: 1fr; } .editor-wrap, .code-wrap { min-height: 225px; } textarea#input { min-height: 230px; } .code { min-height: 220px; } .heading { align-items: flex-start; } }
+    @media (max-width: 475px) { .heading { flex-direction: column; gap: 12px; } .offline { align-self: flex-start; } .panel-foot { align-items: flex-start; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="heading">
+      <div>
+        <div class="eyebrow">Simple Excel tools</div>
+        <div class="title-line">
+          <span class="logo-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="logo-blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#315e9b"/>
+      <stop offset="1" stop-color="#1d416d"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#logo-blue)"/>
+  <rect x="9" y="12" width="6" height="40" rx="3" fill="#78cfb6"/>
+  <text x="21" y="43" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" letter-spacing="-2" fill="#ffffff">fx</text>
+  <circle cx="51" cy="16" r="4" fill="#88dfc5"/>
+</svg></span>
+          <h1>Excel Formula Formatter</h1>
+        </div>
+        <p class="intro">Make complex formulas easier to read—without changing their references or quoted text.</p>
+      </div>
+      <div class="offline" title="Everything runs in this browser. No formulas are sent to a server.">Works offline · Private</div>
+    </div>
+
+    <div class="workbench">
+      <section class="panel" aria-labelledby="input-title">
+        <div class="panel-head">
+          <div><h2 class="panel-title" id="input-title">Your formula</h2><p class="panel-subtitle">Paste a formula from Excel below.</p></div>
+          <button class="subtle-action" id="example" type="button">Try an example</button>
+        </div>
+        <div class="editor-wrap">
+          <textarea id="input" aria-label="Excel formula input" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" placeholder="=LET(IDs,tblTransactions[Transaction ID (PK)],...)" autofocus></textarea>
+        </div>
+        <div class="panel-foot">
+          <div class="actions"><button class="btn btn-primary" id="format" type="button">Format formula</button><button class="btn" id="minify" type="button">Minify</button><button class="btn" id="clear" type="button">Clear</button></div>
+          <div class="settings"><label for="indent">Indent <select id="indent"><option value="4" selected>4 spaces</option><option value="2">2 spaces</option><option value="tab">Tab</option></select></label><label for="layout">Layout <select id="layout"><option value="smart" selected>Smart</option><option value="expanded">Expanded</option></select></label></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="output-title">
+        <div class="panel-head">
+          <div><h2 class="panel-title" id="output-title">Formatted formula</h2><p class="panel-subtitle">Syntax-highlighted, ready to copy back into Excel.</p></div>
+          <button class="subtle-action" type="button" id="select-all">Select all</button>
+        </div>
+        <div class="code-wrap" id="output-scroll" tabindex="0" aria-label="Formatted Excel formula">
+          <pre class="code" id="output"><span class="placeholder">Your formatted formula will appear here.</span></pre>
+        </div>
+        <div class="panel-foot">
+          <div class="status" id="status" role="status" aria-live="polite">Ready · Commas and semicolons are preserved.</div>
+          <button class="btn btn-primary" id="copy" type="button" disabled>Copy formula</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="help">
+      <span>Supports LET, LAMBDA, dynamic arrays, structured references, quoted strings, and comma/semicolon separators. <span class="shortcut">Ctrl</span> + <span class="shortcut">Enter</span> to format.</span>
+      <span>Inspired by <a href="https://github.com/cavo789/excel_formatter" target="_blank" rel="noopener noreferrer">Christophe Avonture’s Excel Formatter</a> and <a href="https://github.com/joshbtn/excelFormulaUtilitiesJS" target="_blank" rel="noopener noreferrer">Josh Bennett’s utilities</a>.</span>
+    </div>
+  </main>
+
+  <script>
+    /*
+     * Excel Formula Formatter — standalone implementation inspired by the
+     * MIT-licensed excel_formatter by Christophe Avonture (2018) and
+     * excelFormulaUtilitiesJS by Josh Bennett.
+     * https://github.com/cavo789/excel_formatter
+     * https://github.com/joshbtn/excelFormulaUtilitiesJS
+     *
+     * This token scanner/formatter is newly implemented to handle modern Excel
+     * references and preserve strings, array constants, and locale decimals.
+     * It formats text only; it does not calculate or fully validate formulas.
+     */
+    const FormulaFormatter = (() => {
+      const isWs = c => /\s/.test(c);
+      const isNameStart = c => /[\p{L}_$\\]/u.test(c);
+      const isNamePart = c => /[\p{L}\p{N}_.$\\?]/u.test(c);
+
+      function tokenize(source, decimalComma = false) {
+        const tokens = [];
+        const errors = [];
+        const push = (type, text) => tokens.push({ type, text });
+        const n = source.length;
+        let i = 0;
+        const decimalMark = decimalComma ? ',' : '.';
+        const numberPattern = decimalComma
+          ? /^(?:\d+(?:,\d*)?|,\d+)(?:[eE][+-]?\d+)?/
+          : /^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/;
+
+        function skipQuote(from, quote) {
+          let p = from + 1;
+          while (p < n) {
+            if (source[p] === quote) {
+              if (source[p + 1] === quote) { p += 2; continue; }
+              return p + 1;
+            }
+            p++;
+          }
+          errors.push(`Unclosed ${quote === '"' ? 'text string' : 'sheet-name quote'}.`);
+          return n;
+        }
+
+        while (i < n) {
+          const c = source[i];
+          if (isWs(c)) {
+            const start = i;
+            while (i < n && isWs(source[i])) i++;
+            push('ws', source.slice(start, i));
+          } else if (c === '"' || c === "'") {
+            const end = skipQuote(i, c);
+            push(c === '"' ? 'string' : 'sheet', source.slice(i, end));
+            i = end;
+          } else if (c === '[') {
+            const start = i;
+            let level = 0;
+            while (i < n) {
+              if (source[i] === '[') level++;
+              else if (source[i] === ']') {
+                level--;
+                if (level === 0) { i++; break; }
+              } else if (source[i] === '"' || source[i] === "'") {
+                i = skipQuote(i, source[i]);
+                continue;
+              }
+              i++;
+            }
+            if (level !== 0) errors.push('Unclosed structured/external reference bracket.');
+            push('reference', source.slice(start, i));
+          } else if (c === '{') {
+            // Protect array constants as a single token. Their separator and
+            // decimal conventions vary with Excel locale.
+            const start = i;
+            let level = 0;
+            while (i < n) {
+              if (source[i] === '"' || source[i] === "'") {
+                i = skipQuote(i, source[i]);
+                continue;
+              }
+              if (source[i] === '{') level++;
+              else if (source[i] === '}') {
+                level--;
+                if (level === 0) { i++; break; }
+              }
+              i++;
+            }
+            if (level !== 0) errors.push('Unclosed array constant.');
+            push('array', source.slice(start, i));
+          } else if (c === '(' || c === ')') {
+            push('paren', c); i++;
+          } else if (c === ',' || c === ';') {
+            // Comma decimals are read as part of a number in semicolon locale
+            // when the number lexer starts on a digit or decimal comma.
+            if (c === decimalMark && /\d/.test(source[i + 1] || '') && decimalComma) {
+              const m = source.slice(i).match(numberPattern);
+              if (m) { push('number', m[0]); i += m[0].length; continue; }
+            }
+            push('separator', c); i++;
+          } else if (/\d/.test(c) || (c === '.' && /\d/.test(source[i + 1] || ''))) {
+            const m = source.slice(i).match(numberPattern);
+            if (m) { push('number', m[0]); i += m[0].length; }
+            else { push('operator', c); i++; }
+          } else if (isNameStart(c)) {
+            const start = i;
+            while (i < n && isNamePart(source[i])) i++;
+            push('name', source.slice(start, i));
+          } else if (c === '#' && /^(?:#REF!|#DIV\/0!|#VALUE!|#N\/A\b|#NAME\?|#NUM!|#NULL!|#SPILL!|#CALC!|#FIELD!|#BLOCKED!|#BUSY!|#GETTING_DATA)/i.test(source.slice(i))) {
+            const m = source.slice(i).match(/^(?:#REF!|#DIV\/0!|#VALUE!|#N\/A\b|#NAME\?|#NUM!|#NULL!|#SPILL!|#CALC!|#FIELD!|#BLOCKED!|#BUSY!|#GETTING_DATA)/i);
+            push('error', m[0]); i += m[0].length;
+          } else {
+            push('operator', c); i++;
+          }
+        }
+        return { tokens, errors };
+      }
+
+      function sourceHasSemicolon(source) {
+        // Semicolons in strings or array constants do not imply semicolon-
+        // separated function arguments.
+        const scanned = tokenize(source, false);
+        return scanned.tokens.some(t => t.type === 'separator' && t.text === ';');
+      }
+
+      function isValueEnd(t) {
+        return t && ['name', 'number', 'string', 'sheet', 'reference', 'array', 'error'].includes(t.type)
+          || (t && t.type === 'paren' && t.text === ')');
+      }
+      function isValueStart(t) {
+        return t && ['name', 'number', 'string', 'sheet', 'reference', 'array', 'error'].includes(t.type)
+          || (t && t.type === 'paren' && t.text === '(');
+      }
+      function significantSpace(prev, next) {
+        // Excel uses whitespace as the *intersection* operator between ranges.
+        // Keep such spaces instead of discarding them as cosmetic indentation.
+        if (!isValueEnd(prev) || !isValueStart(next)) return false;
+        // A function name and its opening '(' are a call, but if Excel included
+        // intervening space, preserving it is safer than guessing its meaning.
+        return true;
+      }
+
+      function normalize(tokens) {
+        const clean = [];
+        for (let i = 0; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t.type !== 'ws') { clean.push(t); continue; }
+          const prev = [...clean].reverse().find(x => x.type !== 'ws');
+          const next = tokens.slice(i + 1).find(x => x.type !== 'ws');
+          if (significantSpace(prev, next)) clean.push({ type: 'intersection', text: ' ' });
+        }
+        return clean;
+      }
+
+      function makePairs(tokens) {
+        const errors = [];
+        const matches = new Map();
+        const stack = [];
+        for (let i = 0; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t.type !== 'paren') continue;
+          if (t.text === '(') stack.push(i);
+          else if (!stack.length) errors.push('Unmatched closing parenthesis.');
+          else {
+            const left = stack.pop();
+            matches.set(left, i); matches.set(i, left);
+          }
+        }
+        if (stack.length) errors.push('Unclosed parenthesis.');
+        return { matches, errors };
+      }
+
+      function format(source, options = {}) {
+        const cleanSource = source.trim();
+        if (!cleanSource) throw new Error('Paste an Excel formula first.');
+        const decimalComma = sourceHasSemicolon(cleanSource);
+        const lexed = tokenize(cleanSource, decimalComma);
+        const tokens = normalize(lexed.tokens);
+        const pairs = makePairs(tokens);
+        const errors = [...lexed.errors, ...pairs.errors];
+        if (errors.length) throw new Error([...new Set(errors)].join(' '));
+        const delimiter = decimalComma ? ';' : ',';
+        const indentUnit = options.indent === 'tab' ? '\t' : ' '.repeat(options.indent === '2' ? 2 : 4);
+        const smart = options.layout !== 'expanded';
+        const expanded = new Set();
+
+        for (let i = 0; i < tokens.length; i++) {
+          if (tokens[i].text !== '(' || tokens[i].type !== 'paren') continue;
+          const end = pairs.matches.get(i);
+          if (end === undefined) continue;
+          const content = tokens.slice(i + 1, end);
+          if (!content.length) continue;
+          const raw = content.map(t => t.text).join('');
+          const fnName = i > 0 && tokens[i - 1].type === 'name' ? tokens[i - 1].text.toUpperCase() : '';
+          let innerDepth = 0, argCount = 0;
+          for (const t of content) {
+            if (t.type === 'paren' && t.text === '(') innerDepth++;
+            else if (t.type === 'paren' && t.text === ')') innerDepth--;
+            else if (t.type === 'separator' && t.text === delimiter && innerDepth === 0) argCount++;
+          }
+          if (!smart || fnName === 'LET' || fnName === 'LAMBDA' || (raw.length > 55 && (argCount > 0 || raw.length > 75))) expanded.add(i);
+        }
+
+        let output = '', depth = 0;
+        const active = [];
+        const append = text => { output += text; };
+        const newLine = () => {
+          output = output.replace(/[ \t]+$/g, '');
+          const next = '\n' + indentUnit.repeat(depth);
+          if (!output.endsWith(next)) output += next;
+        };
+
+        for (let i = 0; i < tokens.length; i++) {
+          const t = tokens[i];
+          if (t.type === 'paren' && t.text === '(') {
+            append('(');
+            const open = expanded.has(i);
+            active.push(open);
+            if (open) { depth++; newLine(); }
+          } else if (t.type === 'paren' && t.text === ')') {
+            const open = active.pop();
+            if (open) { depth--; newLine(); }
+            append(')');
+          } else if (t.type === 'separator' && t.text === delimiter && active.length) {
+            append(t.text);
+            if (active[active.length - 1]) newLine();
+            else if (tokens[i + 1] && !(tokens[i + 1].type === 'separator' || (tokens[i + 1].type === 'paren' && tokens[i + 1].text === ')'))) append(' ');
+          } else if (t.type === 'intersection') {
+            append(' ');
+          } else {
+            append(t.text);
+          }
+        }
+        return output;
+      }
+
+      function minify(source) {
+        const cleanSource = source.trim();
+        if (!cleanSource) throw new Error('Paste an Excel formula first.');
+        const lexed = tokenize(cleanSource, sourceHasSemicolon(cleanSource));
+        const tokens = normalize(lexed.tokens);
+        const pairs = makePairs(tokens);
+        const errors = [...lexed.errors, ...pairs.errors];
+        if (errors.length) throw new Error([...new Set(errors)].join(' '));
+        return tokens.map(t => t.text).join('');
+      }
+
+      function highlightTokens(source) {
+        const decimalComma = sourceHasSemicolon(source);
+        const tokens = tokenize(source, decimalComma).tokens;
+        return tokens.map((t, i) => {
+          let type = t.type;
+          if (type === 'name') {
+            const next = tokens.slice(i + 1).find(x => x.type !== 'ws');
+            if (next && next.text === '(' && next.type === 'paren') type = 'function';
+            else if (/^\$?[A-Z]{1,3}\$?\d+$/i.test(t.text)) type = 'reference';
+          }
+          if (type === 'array') type = 'reference';
+          if (type === 'paren') type = 'bracket';
+          return { ...t, type };
+        });
+      }
+      return { tokenize, sourceHasSemicolon, normalize, format, minify, highlightTokens };
+    })();
+  </script>
+  <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      const input = $('input'), output = $('output'), status = $('status'), copyBtn = $('copy');
+      let lastResult = '';
+      const SAMPLE = '=LET(IDs,tblTransactions[Transaction ID (PK)],LinkedIDs,tblTransactions[Linked Record ID],ValidIDs,FILTER(IDs,(LinkedIDs=[@[Record ID (PK)]])*(tblTransactions[Link Validity]="Valid"),""),TEXTJOIN(", ",TRUE,ValidIDs))';
+
+      function showStatus(message, kind = '') { status.textContent = message; status.className = `status ${kind}`; }
+      function render(text) {
+        lastResult = text;
+        output.replaceChildren();
+        if (!text) {
+          const placeholder = document.createElement('span');
+          placeholder.className = 'placeholder';
+          placeholder.textContent = 'Your formatted formula will appear here.';
+          output.appendChild(placeholder);
+        } else {
+          const fragment = document.createDocumentFragment();
+          for (const t of FormulaFormatter.highlightTokens(text)) {
+            if (['ws', 'intersection', 'name', 'error'].includes(t.type)) {
+              fragment.appendChild(document.createTextNode(t.text));
+            } else {
+              const span = document.createElement('span');
+              span.className = 'token-' + t.type;
+              span.textContent = t.text;
+              fragment.appendChild(span);
+            }
+          }
+          output.appendChild(fragment);
+        }
+        copyBtn.disabled = !text;
+        $('output-scroll').scrollTop = 0;
+      }
+      function run(mode) {
+        try {
+          const result = mode === 'minify'
+            ? FormulaFormatter.minify(input.value)
+            : FormulaFormatter.format(input.value, { indent: $('indent').value, layout: $('layout').value });
+          render(result);
+          const lines = result.split('\n').length;
+          showStatus(mode === 'minify' ? `Minified · ${result.length.toLocaleString()} characters` : `Formatted · ${lines} ${lines === 1 ? 'line' : 'lines'}`, 'ok');
+        } catch (e) { render(''); showStatus(e.message || 'Unable to format this formula.', 'error'); }
+      }
+      async function copy() {
+        if (!lastResult) return;
+        try {
+          if (!navigator.clipboard || !navigator.clipboard.writeText) throw new Error('Clipboard API not available');
+          await navigator.clipboard.writeText(lastResult);
+        } catch (error) {
+          const helper = document.createElement('textarea');
+          helper.value = lastResult;
+          helper.setAttribute('readonly', '');
+          helper.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+          document.body.appendChild(helper);
+          helper.select();
+          const success = document.execCommand('copy');
+          helper.remove();
+          if (!success) { showStatus('Copy was blocked. Use “Select all” and Ctrl+C instead.', 'error'); return; }
+        }
+        showStatus('Copied to clipboard · Paste into Excel.', 'ok');
+      }
+      $('format').addEventListener('click', () => run('format'));
+      $('minify').addEventListener('click', () => run('minify'));
+      $('clear').addEventListener('click', () => { input.value = ''; render(''); showStatus('Ready · Commas and semicolons are preserved.'); input.focus(); });
+      $('example').addEventListener('click', () => { input.value = SAMPLE; run('format'); });
+      $('copy').addEventListener('click', copy);
+      $('select-all').addEventListener('click', () => {
+        if (!lastResult) return;
+        const range = document.createRange();
+        range.selectNodeContents(output);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        $('output-scroll').focus({ preventScroll: true });
+        showStatus('Output selected · Press Ctrl+C to copy.');
+      });
+      input.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); run('format'); }
+        if (event.key === 'Tab') { event.preventDefault(); const a = input.selectionStart, b = input.selectionEnd; input.setRangeText('    ', a, b, 'end'); }
+      });
+      input.addEventListener('input', () => {
+        if (lastResult) showStatus('Input changed · Format again to update the result.');
+      });
+    })();
+  </script>
+</body>
+</html>
